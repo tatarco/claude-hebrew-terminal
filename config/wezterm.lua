@@ -163,12 +163,36 @@ wezterm.on('open-uri', function(window, pane, uri)
   local path = uri:match '^file://[^/]*(/.*)$'
   if not path then return end -- not a file:// link → let WezTerm open it (browser)
   path = path:gsub('%%(%x%x)', function(h) return string.char(tonumber(h, 16)) end)
-  if path:match '%.mdx?$' or path:match '%.markdown$' then
-    window:perform_action(act.SpawnCommandInNewTab { args = { GLOW, '-p', path } }, pane)
-  else
-    wezterm.background_child_process { '/usr/bin/qlmanage', '-p', path }
-  end
-  return false -- we handled it; don't fall through to the OS default (Cursor)
+  local name = path:gsub('.*/', '')
+  local is_md = path:match '%.mdx?$' or path:match '%.markdown$'
+
+  -- Offer a choice instead of guessing one app (no more "everything → Cursor").
+  local choices = {}
+  if is_md then table.insert(choices, { id = 'glow', label = '📖  Render markdown (glow)' }) end
+  table.insert(choices, { id = 'quicklook', label = '👁   Quick Look (preview)' })
+  table.insert(choices, { id = 'finder', label = '📂  Reveal in Finder' })
+  table.insert(choices, { id = 'open', label = '↗   Open in default app' })
+  table.insert(choices, { id = 'copy', label = '⧉   Copy path' })
+
+  window:perform_action(act.InputSelector {
+    title = 'Open “' .. name .. '”',
+    fuzzy = true,
+    choices = choices,
+    action = wezterm.action_callback(function(win, p, id)
+      if id == 'glow' then
+        win:perform_action(act.SpawnCommandInNewTab { args = { GLOW, '-p', path } }, p)
+      elseif id == 'quicklook' then
+        wezterm.background_child_process { '/usr/bin/qlmanage', '-p', path }
+      elseif id == 'finder' then
+        wezterm.background_child_process { '/usr/bin/open', '-R', path }
+      elseif id == 'open' then
+        wezterm.background_child_process { '/usr/bin/open', path }
+      elseif id == 'copy' then
+        win:copy_to_clipboard(path)
+      end
+    end),
+  }, pane)
+  return false -- we handled it; don't fall through to the OS default
 end)
 
 return config
