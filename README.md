@@ -6,11 +6,15 @@
 
 One setup gives you correct **right-to-left Hebrew** in [Claude Code](https://claude.com/claude-code) (and any TUI), plus a tabbed, project-aware, agent-state-aware workflow on **WezTerm**.
 
+<img src="assets/demo.gif" alt="Ask Claude for Hebrew — it renders right-to-left in WezTerm" width="860">
+
+<sub>Ask Claude for Hebrew → it renders <b>right-to-left</b>, in a project-labeled tab.</sub>
+
+<br><br>
+
 <img src="assets/before-after.png" alt="Same Hebrew, rendered broken vs. correct" width="860">
 
 <sub><b>Left:</b> cmux / Ghostty (reversed, gappy) &nbsp;·&nbsp; <b>Right:</b> this setup on WezTerm (correct RTL)</sub>
-
-<!-- TODO: add assets/demo.gif here once recorded — ⌘P pick → claude → badges ◐→● → notification Show -->
 
 
 </div>
