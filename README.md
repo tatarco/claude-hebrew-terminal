@@ -6,8 +6,12 @@
 
 One setup gives you correct **right-to-left Hebrew** in [Claude Code](https://claude.com/claude-code) (and any TUI), plus a tabbed, project-aware, agent-state-aware workflow on **WezTerm**.
 
-<!-- TODO: assets/demo.gif — ⌘P picks a project → claude launches → tab badges go ◐→● → notification → Show focuses the tab -->
-<img src="assets/demo.gif" alt="claude-hebrew-terminal demo" width="800">
+<img src="assets/before-after.png" alt="Same Hebrew, rendered broken vs. correct" width="860">
+
+<sub><b>Left:</b> cmux / Ghostty (reversed, gappy) &nbsp;·&nbsp; <b>Right:</b> this setup on WezTerm (correct RTL)</sub>
+
+<!-- TODO: add assets/demo.gif here once recorded — ⌘P pick → claude → badges ◐→● → notification Show -->
+
 
 </div>
 
@@ -16,9 +20,6 @@ One setup gives you correct **right-to-left Hebrew** in [Claude Code](https://cl
 ## The problem
 
 Most terminals don't run the Unicode **bidirectional (BiDi)** algorithm, so Hebrew comes out **reversed**, and proportional Hebrew fonts add **gaps between letters**. Your agent's output is correct — the terminal just draws it wrong.
-
-<!-- TODO: assets/before-after.png — same Hebrew table: broken (cmux/ghostty) vs correct (WezTerm) -->
-<img src="assets/before-after.png" alt="Hebrew before/after" width="800">
 
 ```
 before:  ומוק ירבח דס      ← reversed words, gappy   (cmux / ghostty / iTerm)
