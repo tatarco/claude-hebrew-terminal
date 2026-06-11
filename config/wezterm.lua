@@ -26,7 +26,7 @@ config.window_padding = { left = 6, right = 6, top = 4, bottom = 4 }
 -- Don't lose agents by accident: prompt before closing a tab/window that has a
 -- real program running (claude, etc.). Idle shells still close instantly.
 config.window_close_confirmation = 'AlwaysPrompt'
-config.skip_close_confirmation_for_processes_only = { 'bash', 'sh', 'zsh', 'fish', 'nu' }
+config.skip_close_confirmation_for_processes_named = { 'bash', 'sh', 'zsh', 'fish', 'nu' }
 
 local HOME = os.getenv 'HOME' or ''
 local function basename(s)
