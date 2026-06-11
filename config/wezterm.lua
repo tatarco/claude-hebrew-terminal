@@ -126,7 +126,11 @@ local function pick_project(window, pane, with_agent)
     choices = choices,
     action = wezterm.action_callback(function(win, p, id)
       if not id then return end
-      win:perform_action(act.SpawnCommandInNewTab { cwd = id, args = with_agent and { 'claude' } or nil }, p)
+      -- Launch claude via a LOGIN shell so the user's real PATH is loaded
+      -- (SpawnCommandInNewTab otherwise uses the bare launchd PATH → "claude not found").
+      local shell = os.getenv 'SHELL' or '/bin/zsh'
+      local args = with_agent and { shell, '-l', '-c', 'claude' } or nil
+      win:perform_action(act.SpawnCommandInNewTab { cwd = id, args = args }, p)
     end),
   }, pane)
 end
