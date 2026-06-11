@@ -126,11 +126,15 @@ local function pick_project(window, pane, with_agent)
     choices = choices,
     action = wezterm.action_callback(function(win, p, id)
       if not id then return end
-      -- Launch claude via a LOGIN shell so the user's real PATH is loaded
-      -- (SpawnCommandInNewTab otherwise uses the bare launchd PATH → "claude not found").
-      local shell = os.getenv 'SHELL' or '/bin/zsh'
-      local args = with_agent and { shell, '-l', '-c', 'claude' } or nil
-      win:perform_action(act.SpawnCommandInNewTab { cwd = id, args = args }, p)
+      -- Spawn the user's NORMAL shell tab in the project (correct cwd + full PATH),
+      -- then type `claude` into it. Robust vs. SpawnCommandInNewTab's bare PATH and
+      -- login-shell cwd quirks; the tab also stays alive if claude exits.
+      local _, pane = win:mux_window():spawn_tab { cwd = id }
+      if not pane then return end
+      -- clear any stale agent-state badge inherited from a reused pane id
+      wezterm.background_child_process { '/bin/sh', '-c',
+        'mkdir -p /tmp/wezterm-agent-state; printf idle > /tmp/wezterm-agent-state/' .. tostring(pane:pane_id()) }
+      if with_agent then pane:send_text 'claude\n' end
     end),
   }, pane)
 end
