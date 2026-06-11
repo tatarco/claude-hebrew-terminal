@@ -1,78 +1,69 @@
-# claude-hebrew-terminal
+<div align="center">
 
-Make Hebrew (and other right-to-left) text render correctly in your terminal —
-for [Claude Code](https://claude.com/claude-code) and any other TUI.
+# 🪬 claude-hebrew-terminal
 
-Most terminals don't apply the Unicode bidirectional (BiDi) algorithm, so Hebrew
-comes out **reversed**, and proportional Hebrew fonts add **gaps between letters**.
-This repo installs and configures [WezTerm](https://wezterm.org) — one of the few
-terminals with real BiDi — plus a monospace Hebrew font, so Hebrew reads
-right-to-left with clean spacing. The app's output is already correct; only the
-display layer needed fixing.
+### Read Hebrew (and any RTL) correctly in your terminal — with a cmux-style multi-agent workflow built in.
 
-| Before (no BiDi) | After (WezTerm + BiDi + mono Hebrew) |
-|---|---|
-| `ומוק ירבח דס` (reversed, gappy) | `סך חברי קומו` (correct RTL, tight) |
+One command. WezTerm + a monospace Hebrew font + a tabbed, project-aware, agent-state-aware setup for [Claude Code](https://claude.com/claude-code) and any terminal AI agent.
 
-## Install
+</div>
+
+---
+
+## The problem
+
+Most terminals don't apply the Unicode **bidirectional (BiDi)** algorithm, so Hebrew comes out **reversed**, and proportional Hebrew fonts add **gaps between letters**. Your AI agent's output is correct — the terminal just draws it wrong.
+
+```
+broken:   ומוק ירבח דס      ← reversed words, gappy
+correct:  סך חברי קומו       ← right-to-left, tight
+```
+
+The fix lives in the **renderer**, so this repo sets you up on **WezTerm** — one of the only terminals with real BiDi — and then makes it feel like the multi-agent terminal you already love.
+
+## Install (one command)
 
 ```bash
 git clone https://github.com/tatarco/claude-hebrew-terminal
-cd claude-hebrew-terminal
-./scripts/install.sh
-open -a WezTerm        # then run `claude` (or any TUI) inside it
+cd claude-hebrew-terminal && ./install.sh
+open -a WezTerm
 ```
 
-This installs WezTerm + `Miriam Mono CLM` via Homebrew and writes
-`~/.config/wezterm/wezterm.lua`. An existing config is backed up first. Verify with
-`./scripts/verify.sh`.
+Installs WezTerm + `Miriam Mono CLM` + `fd`, writes the config, and wires up Claude Code hooks. Existing configs are backed up. Use `./install.sh --no-hooks` to skip the Claude integration.
+
+## What you get
+
+| Press | Does |
+|---|---|
+| **⌘P** | Fuzzy-pick a project → opens it in a new tab (then run `claude`) |
+| **⌘⇧P** | Fuzzy-pick a project → opens a tab **and** starts `claude` |
+| **⌘1–9** | Jump to a tab · **⌘←/→** move · **⌘T** new · **⌘W** close |
+
+- **Correct Hebrew/RTL** in every tab — right-to-left, no letter gaps, copy-paste stays in logical order.
+- **A tab per agent**, each labeled with its project — your cmux-style strip.
+- **Live agent-state badges**, the cmux killer feature, right in the tab:
+
+  | Badge | Meaning |
+  |---|---|
+  | ○ grey | idle / done |
+  | ◐ yellow | Claude is working |
+  | ● red | Claude needs you (input or permission) |
+
+- **Desktop notification** when an agent finishes and needs you.
 
 ## How it works
 
-Two independent problems, two fixes — see [SKILL.md](SKILL.md) for the full table:
+- **Direction** — `bidi_enabled` in WezTerm reorders RTL runs for display while keeping logical order internally (copy-paste stays correct). Hebrew needs no letter-joining, so WezTerm's one BiDi limitation doesn't apply.
+- **Spacing** — Hebrew is served by **Miriam Mono CLM**, a monospace font whose advance matches the Latin font, so glyphs fill their cells with no gaps. (Diagnose any font: `wezterm ls-fonts --text 'שלום'` — uniform `x_adv` = monospace.)
+- **Agent state** — Claude Code hooks (`UserPromptSubmit`/`Notification`/`Stop`) write each session's state to a file keyed by the WezTerm pane id; WezTerm polls it and recolors the tab.
 
-- **Direction** — `bidi_enabled = true` in WezTerm reorders RTL runs for display
-  while keeping logical order internally, so copy-paste stays correct.
-- **Spacing** — Hebrew is served by `Miriam Mono CLM`, a monospace font whose
-  glyph advance matches the Latin font's cell width, eliminating inter-letter gaps.
-  (Diagnose any font with `wezterm ls-fonts --text 'שלום'`: uniform `x_adv` = mono.)
+## Why not cmux / Ghostty / iTerm / Warp?
 
-## Does it work in cmux / ghostty?
-
-**Not yet.** cmux renders with `libghostty`, which is LTR-only in every shipped
-release — Hebrew can't go RTL there regardless of font. BiDi is in active
-development for ghostty; when it lands, cmux inherits it. Run `./scripts/install.sh
---prestage-cmux` to seed the Hebrew fallback font into `~/.config/ghostty/config`
-now so cmux is ready then. Until then, WezTerm is the read-Hebrew workflow.
-
-Tracking: [ghostty BiDi #9774](https://github.com/ghostty-org/ghostty/discussions/9774)
-· [ghostty macOS RTL #12183](https://github.com/ghostty-org/ghostty/issues/12183)
-
-## Want the cmux workflow *and* BiDi?
-
-cmux is a GUI terminal app with a fixed renderer (ghostty), so you can't swap
-WezTerm in — and the other GUI alternatives ([Warp](https://www.warp.dev),
-[wmux](https://github.com/amirlehmam/wmux)) bring their own renderers too. The fix
-is to use a **terminal-agnostic** agent orchestrator — a TUI you run *inside*
-WezTerm, so it inherits WezTerm's BiDi:
-
-- **[Claude Squad](https://github.com/smtg-ai/claude-squad)** — closest to cmux's
-  model: manages multiple agents (Claude Code, Codex, Gemini, Aider, OpenCode, Amp)
-  each in its own tmux session + git worktree, with diff review. Runs in WezTerm.
-- **Herdr** — single Rust binary, tmux-native, agent-aware, lives in your existing
-  terminal.
-- **WezTerm's built-in multiplexer** (tabs, panes, workspaces) covers much of
-  cmux's multitasking on its own.
-
-Caveat: these orchestrate agents via tmux; WezTerm still applies BiDi to displayed
-cells, so Hebrew *content* reads RTL, but test tmux status bars/borders in
-Hebrew-heavy panes.
+They render with engines that are **LTR-only** today (Ghostty — and therefore cmux — has no shipped BiDi; iTerm/Warp likewise). A font can't fix direction; the renderer must. WezTerm is the pragmatic answer that also gives you a great multi-agent workflow. See [`alternatives/`](alternatives/) for a tiling-window-manager (AeroSpace) variant.
 
 ## Use as a Claude Code skill
 
-Drop this repo into `~/.claude/skills/claude-hebrew-terminal/` (or add it as a
-plugin). The agent loads [SKILL.md](SKILL.md) and can run the setup on request —
-e.g. "set up my terminal to read Hebrew."
+Drop this repo into `~/.claude/skills/claude-hebrew-terminal/` — the agent reads [SKILL.md](SKILL.md) and can run the whole setup on request ("set up my terminal to read Hebrew").
 
 ## License
 
