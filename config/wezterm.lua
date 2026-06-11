@@ -63,11 +63,10 @@ end)
 config.status_update_interval = 1200
 wezterm.on('update-status', function(window) window:set_right_status '' end)
 
--- ── Agent-done notification (Claude rings the bell when it needs you) ──────
+-- The actionable "Claude is waiting · Show" notification is posted by the Claude
+-- Notification hook (terminal-notifier, focuses this exact tab on click). Keep the
+-- terminal bell quiet so we don't double-notify.
 config.audible_bell = 'Disabled'
-wezterm.on('bell', function(window, pane)
-  window:toast_notification('Agent ready', basename(pane:get_current_working_dir()), nil, 4000)
-end)
 
 -- ── Project picker (⌘P) — WezTerm's child PATH is limited, so find fd/exes
 local function first_existing(paths)
