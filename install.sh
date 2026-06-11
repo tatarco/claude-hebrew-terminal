@@ -32,8 +32,9 @@ if [[ -f "$WEZ_DIR/wezterm.lua" ]] && ! grep -q "claude-hebrew-terminal" "$WEZ_D
 fi
 cp "$ROOT/config/wezterm.lua" "$WEZ_DIR/wezterm.lua"
 cp "$ROOT/scripts/agent-state.sh" "$WEZ_DIR/agent-state.sh"
-chmod +x "$WEZ_DIR/agent-state.sh"
-ok "Installed config + helper to $WEZ_DIR"
+cp "$ROOT/scripts/file-open.sh" "$WEZ_DIR/file-open.sh"
+chmod +x "$WEZ_DIR/agent-state.sh" "$WEZ_DIR/file-open.sh"
+ok "Installed config + helpers to $WEZ_DIR"
 
 # Nice notification icon (Claude app icon → png), best-effort.
 ICON="$WEZ_DIR/notif-icon.png"

@@ -145,6 +145,10 @@ table.insert(config.hyperlink_rules, {
   regex = [[\b(?:localhost|127\.0\.0\.1)(?::\d+)?(?:/\S*)?\b]], format = 'http://$0',
 })
 table.insert(config.hyperlink_rules, { regex = [[\bwww\.\S+\b]], format = 'https://$0' })
+-- Bare absolute / ~ file paths (…/x.ext) → clickable file:// so the file menu fires.
+table.insert(config.hyperlink_rules, {
+  regex = [[(?:^|[\s"'`(<])((?:/|~/)[\w.~@%+\-/]+\.\w+)]], format = 'file://$1', highlight = 1,
+})
 
 config.mouse_bindings = {
   -- Plain left-click opens a link when you're NOT selecting text (browser-like).
@@ -158,41 +162,22 @@ config.mouse_bindings = {
 -- Web links (http/https) open in the browser (WezTerm default). But FILE links
 -- shouldn't launch an editor — render Markdown in an in-terminal reader (glow)
 -- and preview anything else with Quick Look.
-local GLOW = first_existing { '/opt/homebrew/bin/glow', '/usr/local/bin/glow', 'glow' }
+-- File links (file://, bare absolute, or ~/ paths) → a NATIVE popup menu
+-- (osascript, floats over the desktop; doesn't take over the terminal).
+-- http/https/mailto fall through to WezTerm's default (browser/mail).
+local FILE_OPEN = HOME .. '/.config/wezterm/file-open.sh'
 wezterm.on('open-uri', function(window, pane, uri)
-  local path = uri:match '^file://[^/]*(/.*)$'
-  if not path then return end -- not a file:// link → let WezTerm open it (browser)
+  local path
+  if uri:find '^file://' then
+    path = uri:gsub('^file://[^/]*', '')
+  elseif uri:find '^/' or uri:find '^~/' then
+    path = uri
+  else
+    return -- not a file link → let WezTerm open it normally
+  end
   path = path:gsub('%%(%x%x)', function(h) return string.char(tonumber(h, 16)) end)
-  local name = path:gsub('.*/', '')
-  local is_md = path:match '%.mdx?$' or path:match '%.markdown$'
-
-  -- Offer a choice instead of guessing one app (no more "everything → Cursor").
-  local choices = {}
-  if is_md then table.insert(choices, { id = 'glow', label = '📖  Render markdown (glow)' }) end
-  table.insert(choices, { id = 'quicklook', label = '👁   Quick Look (preview)' })
-  table.insert(choices, { id = 'finder', label = '📂  Reveal in Finder' })
-  table.insert(choices, { id = 'open', label = '↗   Open in default app' })
-  table.insert(choices, { id = 'copy', label = '⧉   Copy path' })
-
-  window:perform_action(act.InputSelector {
-    title = 'Open “' .. name .. '”',
-    fuzzy = true,
-    choices = choices,
-    action = wezterm.action_callback(function(win, p, id)
-      if id == 'glow' then
-        win:perform_action(act.SpawnCommandInNewTab { args = { GLOW, '-p', path } }, p)
-      elseif id == 'quicklook' then
-        wezterm.background_child_process { '/usr/bin/qlmanage', '-p', path }
-      elseif id == 'finder' then
-        wezterm.background_child_process { '/usr/bin/open', '-R', path }
-      elseif id == 'open' then
-        wezterm.background_child_process { '/usr/bin/open', path }
-      elseif id == 'copy' then
-        win:copy_to_clipboard(path)
-      end
-    end),
-  }, pane)
-  return false -- we handled it; don't fall through to the OS default
+  wezterm.background_child_process { '/bin/bash', FILE_OPEN, path }
+  return false
 end)
 
 return config
