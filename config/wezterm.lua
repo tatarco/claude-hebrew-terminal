@@ -149,6 +149,11 @@ table.insert(config.hyperlink_rules, { regex = [[\bwww\.\S+\b]], format = 'https
 table.insert(config.hyperlink_rules, {
   regex = [[(?:^|[\s"'`(<])((?:/|~/)[\w.~@%+\-/]+\.\w+)]], format = 'file://$1', highlight = 1,
 })
+-- Explicit relative paths (./x.ext, ../x.ext) → kept raw; resolved against the
+-- tab's cwd in the open-uri handler below.
+table.insert(config.hyperlink_rules, {
+  regex = [[(?:^|[\s"'`(<])(\.{1,2}/[\w.~@%+\-/]+\.\w+)]], format = '$1', highlight = 1,
+})
 
 config.mouse_bindings = {
   -- Plain left-click opens a link when you're NOT selecting text (browser-like).
@@ -166,14 +171,26 @@ config.mouse_bindings = {
 -- (osascript, floats over the desktop; doesn't take over the terminal).
 -- http/https/mailto fall through to WezTerm's default (browser/mail).
 local FILE_OPEN = HOME .. '/.config/wezterm/file-open.sh'
+local function pane_cwd(pane)
+  local cwd = pane:get_current_working_dir()
+  if not cwd then return nil end
+  if type(cwd) == 'string' then return (cwd:gsub('^file://[^/]*', '')) end
+  return cwd.file_path
+end
+
 wezterm.on('open-uri', function(window, pane, uri)
   local path
   if uri:find '^file://' then
     path = uri:gsub('^file://[^/]*', '')
+  elseif uri:find '^%a[%w+.%-]*:' then
+    return -- another scheme (http/https/mailto/…) → let WezTerm open it normally
   elseif uri:find '^/' or uri:find '^~/' then
     path = uri
   else
-    return -- not a file link → let WezTerm open it normally
+    -- relative path → resolve against the tab's working directory
+    local base = pane_cwd(pane)
+    if not base then return end
+    path = base:gsub('/+$', '') .. '/' .. (uri:gsub('^%./', ''))
   end
   path = path:gsub('%%(%x%x)', function(h) return string.char(tonumber(h, 16)) end)
   wezterm.background_child_process { '/bin/bash', FILE_OPEN, path }
