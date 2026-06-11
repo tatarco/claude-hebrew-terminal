@@ -31,8 +31,8 @@ outer.right = 8
 #   alt-enter        -> pick project, open a shell there (prompt shows project+branch)
 #   alt-p            -> pick project, launch claude there (an agent)
 #   alt-shift-enter  -> escape hatch: a plain shell in home
-alt-enter = 'exec-and-forget /opt/homebrew/bin/wezterm start -- /Users/galtidhar/.config/wezterm/agent-sessionizer.sh shell'
-alt-p = 'exec-and-forget /opt/homebrew/bin/wezterm start -- /Users/galtidhar/.config/wezterm/agent-sessionizer.sh agent'
+alt-enter = 'exec-and-forget /opt/homebrew/bin/wezterm start -- /Users/YOU/.config/wezterm/agent-sessionizer.sh shell'
+alt-p = 'exec-and-forget /opt/homebrew/bin/wezterm start -- /Users/YOU/.config/wezterm/agent-sessionizer.sh agent'
 alt-shift-enter = 'exec-and-forget open -na WezTerm'
 
 # Layout
