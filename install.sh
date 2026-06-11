@@ -18,9 +18,9 @@ HOOKS=1
 [[ "$(uname)" == "Darwin" ]] || { warn "Built for macOS; continuing anyway."; }
 command -v brew >/dev/null || { echo "Homebrew required — https://brew.sh"; exit 1; }
 
-note "Installing WezTerm, Miriam Mono CLM (Hebrew monospace), and fd…"
+note "Installing WezTerm, Miriam Mono CLM (Hebrew font), fd, glow, terminal-notifier…"
 brew install --cask wezterm font-miriam-mono-clm
-brew install fd
+brew install fd glow terminal-notifier
 
 WEZ_DIR="$HOME/.config/wezterm"
 mkdir -p "$WEZ_DIR"
@@ -34,6 +34,15 @@ cp "$ROOT/config/wezterm.lua" "$WEZ_DIR/wezterm.lua"
 cp "$ROOT/scripts/agent-state.sh" "$WEZ_DIR/agent-state.sh"
 chmod +x "$WEZ_DIR/agent-state.sh"
 ok "Installed config + helper to $WEZ_DIR"
+
+# Nice notification icon (Claude app icon → png), best-effort.
+ICON="$WEZ_DIR/notif-icon.png"
+if [[ ! -f "$ICON" ]]; then
+  src="$(/usr/bin/find /Applications/Claude.app -name '*.icns' 2>/dev/null | head -1)"
+  [[ -z "$src" ]] && src="/Applications/WezTerm.app/Contents/Resources/terminal.icns"
+  [[ -f "$src" ]] && sips -s format png "$src" --out "$ICON" -Z 256 >/dev/null 2>&1 \
+    && ok "Notification icon set (drop any PNG at $ICON to change it)" || true
+fi
 
 # Claude Code hooks → live agent-state badges in the tab strip
 if [[ "$HOOKS" == "1" ]]; then

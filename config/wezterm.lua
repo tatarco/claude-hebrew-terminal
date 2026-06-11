@@ -138,4 +138,37 @@ for i = 1, 9 do
   table.insert(config.keys, { key = tostring(i), mods = 'CMD', action = act.ActivateTab(i - 1) })
 end
 
+-- ── Links open nicely in the browser ──────────────────────────────────────
+-- Detect URLs (plus bare localhost:port and www.) and open the default browser.
+config.hyperlink_rules = wezterm.default_hyperlink_rules()
+table.insert(config.hyperlink_rules, {
+  regex = [[\b(?:localhost|127\.0\.0\.1)(?::\d+)?(?:/\S*)?\b]], format = 'http://$0',
+})
+table.insert(config.hyperlink_rules, { regex = [[\bwww\.\S+\b]], format = 'https://$0' })
+
+config.mouse_bindings = {
+  -- Plain left-click opens a link when you're NOT selecting text (browser-like).
+  { event = { Up = { streak = 1, button = 'Left' } }, mods = 'NONE',
+    action = act.CompleteSelectionOrOpenLinkAtMouseCursor 'ClipboardAndPrimarySelection' },
+  -- ⌘-click also opens links explicitly.
+  { event = { Up = { streak = 1, button = 'Left' } }, mods = 'CMD',
+    action = act.OpenLinkAtMouseCursor },
+}
+
+-- Web links (http/https) open in the browser (WezTerm default). But FILE links
+-- shouldn't launch an editor — render Markdown in an in-terminal reader (glow)
+-- and preview anything else with Quick Look.
+local GLOW = first_existing { '/opt/homebrew/bin/glow', '/usr/local/bin/glow', 'glow' }
+wezterm.on('open-uri', function(window, pane, uri)
+  local path = uri:match '^file://[^/]*(/.*)$'
+  if not path then return end -- not a file:// link → let WezTerm open it (browser)
+  path = path:gsub('%%(%x%x)', function(h) return string.char(tonumber(h, 16)) end)
+  if path:match '%.mdx?$' or path:match '%.markdown$' then
+    window:perform_action(act.SpawnCommandInNewTab { args = { GLOW, '-p', path } }, pane)
+  else
+    wezterm.background_child_process { '/usr/bin/qlmanage', '-p', path }
+  end
+  return false -- we handled it; don't fall through to the OS default (Cursor)
+end)
+
 return config

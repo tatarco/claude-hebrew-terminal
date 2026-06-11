@@ -28,6 +28,9 @@ except Exception: print("")' 2>/dev/null)
   for w in /opt/homebrew/bin/wezterm /usr/local/bin/wezterm /usr/bin/wezterm; do
     [ -x "$w" ] && { wez="$w"; break; }
   done
+  icon="$HOME/.config/wezterm/notif-icon.png"
+  iconargs=()
+  [ -f "$icon" ] && iconargs=(-appIcon "$icon" -contentImage "$icon")
   terminal-notifier \
     -title "Claude Code" \
     -subtitle "$proj" \
@@ -35,6 +38,7 @@ except Exception: print("")' 2>/dev/null)
     -actions Show \
     -timeout 30 \
     -group "wezterm-agent-$pane" \
+    "${iconargs[@]}" \
     -execute "$wez cli activate-pane --pane-id $pane >/dev/null 2>&1; open -a WezTerm" \
     >/dev/null 2>&1 &
 fi
