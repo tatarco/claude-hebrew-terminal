@@ -23,6 +23,11 @@ config.use_fancy_tab_bar = true
 config.tab_max_width = 32
 config.window_padding = { left = 6, right = 6, top = 4, bottom = 4 }
 
+-- Don't lose agents by accident: prompt before closing a tab/window that has a
+-- real program running (claude, etc.). Idle shells still close instantly.
+config.window_close_confirmation = 'AlwaysPrompt'
+config.skip_close_confirmation_for_processes_only = { 'bash', 'sh', 'zsh', 'fish', 'nu' }
+
 local HOME = os.getenv 'HOME' or ''
 local function basename(s)
   if s == nil then return '~' end
@@ -130,7 +135,7 @@ config.keys = {
   { key = 'p', mods = 'CMD',       action = wezterm.action_callback(function(w, p) pick_project(w, p, false) end) },
   { key = 'P', mods = 'CMD|SHIFT', action = wezterm.action_callback(function(w, p) pick_project(w, p, true) end) },
   { key = 't', mods = 'CMD',       action = act.SpawnTab 'CurrentPaneDomain' },
-  { key = 'w', mods = 'CMD',       action = act.CloseCurrentTab { confirm = false } },
+  { key = 'w', mods = 'CMD',       action = act.CloseCurrentTab { confirm = true } },
   { key = 'LeftArrow',  mods = 'CMD', action = act.ActivateTabRelative(-1) },
   { key = 'RightArrow', mods = 'CMD', action = act.ActivateTabRelative(1) },
 }
